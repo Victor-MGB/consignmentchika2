@@ -1,9 +1,7 @@
 
 
 // {
-//     "userID": "Bm0i5",
-
-
+//     "userID": "KKaAH",
 //     "parcelId":""
 //   "coordinates": {
 //     "lat": 37.7749111111111111111111111,

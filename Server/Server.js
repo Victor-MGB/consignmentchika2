@@ -55,7 +55,7 @@ const server = http.createServer((req, res) => {
       !permanentAddress
     ) {
       throw new Error(
-        "Incomplete biodata. Please provide all required fields.",
+        "Incomplete biodata. Please provide all required fields."
       );
     }
 
@@ -99,7 +99,7 @@ const server = http.createServer((req, res) => {
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
     res.setHeader(
       "Access-Control-Allow-Headers",
-      "Content-Type, Authorization",
+      "Content-Type, Authorization"
     );
 
     switch (req.url) {
@@ -122,7 +122,7 @@ const server = http.createServer((req, res) => {
               message: "User registered successfully",
               user: newUser,
               DBSize: newDbData,
-            }),
+            })
           );
         }
         break;
@@ -136,7 +136,7 @@ const server = http.createServer((req, res) => {
 
           // Find the user in the mock database
           const foundUserIndex = mock_DB.findIndex(
-            (user) => user.ID === userID,
+            (user) => user.ID === userID
           );
 
           if (foundUserIndex !== -1) {
@@ -158,7 +158,7 @@ const server = http.createServer((req, res) => {
               JSON.stringify({
                 message: "Parcel added to user successfully",
                 user: mock_DB[foundUserIndex],
-              }),
+              })
             );
           } else {
             // User not found in the database
@@ -172,76 +172,37 @@ const server = http.createServer((req, res) => {
         // updates parcel coordinates ENDPOINT---------------------------------------------------------------------------------------------------------------------------------
         if (req.method === "PUT") {
           const { userId, parcelId, coordinates } = JSON.parse(userInfo);
-          mock_DB.find((user) => {
-            if (user.userID === userId) {
-              const parcelIndex = user.PARCEL.findIndex(
-                (p) => p.TrackingNumber === parcelId,
+          const user = mock_DB.find((user) => user.ID === userId);
+          if (user) console.log(user);
+          if (user) {
+            const parcelIndex = user.PARCEL.findIndex(
+              (p) => p.TrackingNumber === parcelId
+            );
+
+            const newCoordinates = {
+              lat: coordinates.lat,
+              lon: coordinates.lon,
+            };
+
+            if (parcelIndex === -1) {
+              res.writeHead(404, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: "Parcel not found" }));
+            } else {
+              user.PARCEL[parcelIndex].coordinates = newCoordinates;
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(
+                JSON.stringify({
+                  message: "Parcel coordinates updated successfully",
+                  user: user,
+                })
               );
-
-              const newCoordinates = {
-                lat: coordinates.lat,
-                lon: coordinates.lon,
-              };
-              if (parcelIndex === -1) {
-                res.writeHead(404, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ error: "Parcel not found" }));
-              } else {
-                user.PARCEL[parcelIndex].coordinates = newCoordinates;
-                res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(
-                  JSON.stringify({
-                    message: "Parcel coordinates updated successfully",
-                    user: user,
-                  }),
-                );
-              }
             }
-          });
-
-          //TODO: Remember to uncomment
-          // Find the user in the database
-          // Model.findOne({ ID: userId }, (err, user) => {
-          //   if (err) {
-          //     res.writeHead(500, { "Content-Type": "application/json" });
-          //     res.end(JSON.stringify({ error: "Internal server error" }));
-          //   } else if (!user) {
-          //     res.writeHead(404, { "Content-Type": "application/json" });
-          //     res.end(JSON.stringify({ error: "User not found" }));
-          //   } else {
-          //     // Find the parcel by ID
-          //     const parcelIndex = user.PARCEL.findIndex(
-          //       (p) => p.TrackingNumber === parcelId,
-          //     );
-          //     if (parcelIndex === -1) {
-          //       res.writeHead(404, { "Content-Type": "application/json" });
-          //       res.end(JSON.stringify({ error: "Parcel not found" }));
-          //     } else {
-          //       // Update the coordinates of the parcel
-          //       user.PARCEL[parcelIndex].coordinates = coordinates;
-
-          //       // Save the modified user object back to the database
-          //       user.save((err) => {
-          //         if (err) {
-          //           res.writeHead(500, { "Content-Type": "application/json" });
-          //           res.end(JSON.stringify({ error: "Internal server error" }));
-          //         } else {
-          //           res.writeHead(200, { "Content-Type": "application/json" });
-          //           res.end(
-          //             JSON.stringify({
-          //               message: "Parcel coordinates updated successfully",
-          //               user: user,
-          //             }),
-          //           );
-          //         }
-          //       });
-          //     }
-          //   }
-          // });
+          } else {
+            res.writeHead(404, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "User not found" }));
+          }
         }
-        res.writeHead(404, { "Content-Type": "text/plain" });
-        res.end("failed to update coordinates or wrong method");
         break;
-
       case "/users":
         if (req.method === "GET") {
           // Query the database for all registered users
