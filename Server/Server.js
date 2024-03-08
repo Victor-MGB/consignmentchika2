@@ -20,7 +20,7 @@ const server = http.createServer((req, res) => {
 
   //this function is responsible for creating new users
   //with the information from request body.
-  CreateUser = (bio_data, parcel) => {
+  const CreateUser = (bio_data, parcel) => {
     let fullName,
       email,
       userName,
@@ -65,7 +65,7 @@ const server = http.createServer((req, res) => {
         email: email,
         userName: userName,
         phoneNumber: phoneNumber,
-        address: permanentAddress, // Assuming this should be permanentAddress instead of phoneNumebr
+        address: permanentAddress, 
         DOB: DOB,
         permanentAddress: permanentAddress,
       },
@@ -114,8 +114,7 @@ const server = http.createServer((req, res) => {
 
           //since DB is not available for now. i will use a mocked DB
           const newDbData = mock_DB.push(newUser);
-          //TODO: Remember to uncomment model
-          //Model.create(newUser);
+        
           res.writeHead(201, { "Content-Type": "application/json" });
           res.end(
             JSON.stringify({
