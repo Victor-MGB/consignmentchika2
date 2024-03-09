@@ -27,10 +27,11 @@ const ParcelSchema = new Schema({
 
 // schema for the User document
 const UserSchema = new Schema({
-  ID: { type: String, unique: true },
+  ID: { type: String },
   bioData: BioDataSchema,
   parcels: [ParcelSchema],
 });
+
 
 // model for the User collection
 const User = mongoose.model("User", UserSchema);
