@@ -118,11 +118,18 @@ app.post("/login", async (req, res) => {
 
     // Check if the user exists
     if (user) {
+      // Generate a token with 20 characters
+      const token = IdGen(20);
 
-      // Return success message or user details
+      // You may want to save the token in the user document for future use
+      user.token = token;
+      await user.save();
+
+      // Return success message, user details, and the token
       res.status(200).json({
         message: "Login successful",
         user: user.toObject(),
+        token: token,
       });
     } else {
       // User not found
@@ -133,6 +140,7 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 app.post("/Parcels", async (req, res) => {
   try {
