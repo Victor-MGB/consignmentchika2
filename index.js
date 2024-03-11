@@ -50,9 +50,24 @@ const generateUniqueID = () => {
   return Date.now().toString();
 };
 
+
 app.post("/Register", async (req, res) => {
   try {
     const userData = req.body;
+
+    // Check if the email already exists
+    const existingUser = await UserModel.findOne({
+      "bioData.email": userData.email,
+    });
+    if (existingUser) {
+      // Email already exists, return a conflict response
+      return res
+        .status(409)
+        .json({
+          message: "User already registered",
+          user: existingUser.toObject(),
+        });
+    }
 
     // Generate a unique ID
     userData.ID = generateUniqueID();
@@ -73,7 +88,7 @@ app.post("/Register", async (req, res) => {
     }).save();
 
     res.status(201).json({
-      message: "User registered successfully",
+      message: "New user registered successfully",
       user: savedUser.toObject(),
     });
   } catch (error) {
@@ -81,6 +96,8 @@ app.post("/Register", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+
 
 
 app.post("/login", async (req, res) => {
@@ -156,40 +173,79 @@ app.put("/updateCoordinates", async (req, res) => {
     const user = await UserModel.findOne({ ID: userId });
     console.log("User found:", user);
 
-    if (user) {
-      const parcelIndex = user.parcels.findIndex(
-        (p) => p.trackingNumber === parcelId
-      );
-      console.log("ParcelIndex:", parcelIndex);
-
-      if (parcelIndex === -1) {
-        console.error("Parcel not found. User:", user, "ParcelId:", parcelId);
-        res.status(404).json({ error: "Parcel not found" });
-      } else {
-        console.log("Updating coordinates...");
-
-        user.parcels[parcelIndex].coordinates = {
-          lat: coordinates.lat,
-          lon: coordinates.lon,
-        };
-
-        const savedUser = await user.save();
-        console.log("Coordinates updated. User:", savedUser);
-
-        res.status(200).json({
-          message: "Parcel coordinates updated successfully",
-          user: savedUser,
-        });
-      }
-    } else {
+    if (!user) {
       console.error("User not found. UserId:", userId);
-      res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "User not found" });
     }
+
+    const parcelIndex = user.parcels.findIndex(
+      (p) => p.trackingNumber === parcelId
+    );
+
+    console.log("ParcelIndex:", parcelIndex);
+
+    if (parcelIndex === -1) {
+      console.error("Parcel not found. User:", user, "ParcelId:", parcelId);
+      return res.status(404).json({ error: "Parcel not found" });
+    }
+
+    console.log("Updating coordinates...");
+    user.parcels[parcelIndex].coordinates = {
+      lat: coordinates.lat,
+      lon: coordinates.lon,
+    };
+
+    const savedUser = await user.save();
+    console.log("Coordinates updated. User:", savedUser);
+
+    res.status(200).json({
+      message: "Parcel coordinates updated successfully",
+      user: savedUser,
+    });
   } catch (error) {
     console.error("Internal server error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+
+app.get("/userParcels/:userId", async (req, res) => {
+  try {
+    // Extract userId from URL parameters
+    const userId = req.params.userId;
+
+    // Find user in the database based on userId
+    const user = await UserModel.findOne({ ID: userId });
+
+    // Check if the user exists
+    if (!user) {
+      console.error("User not found. UserId:", userId);
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Extract user's parcels
+    const userParcels = user.parcels;
+
+    // Check if the user has any parcels
+    if (!userParcels || userParcels.length === 0) {
+      return res.status(200).json({
+        message: "User has no parcels",
+        userParcels: [],
+      });
+    }
+
+    // Respond with success message and user's parcels
+    res.status(200).json({
+      message: "User parcels retrieved successfully",
+      userParcels: userParcels,
+    });
+  } catch (error) {
+    console.error("Internal server error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
 
 app.get("/users", async (req, res) => {
   try {
@@ -200,9 +256,11 @@ app.get("/users", async (req, res) => {
   }
 });
 
+
 app.use((req, res) => {
   res.status(404).send("Not Found");
 });
+
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
