@@ -142,18 +142,18 @@ app.post("/login", async (req, res) => {
 
 app.post("/Parcels", async (req, res) => {
   try {
-    const { userID, ...parcelData } = req.body; // Destructure userID separately
+    const { userID, ...data } = req.body; // Destructure userID separately
     const foundUser = await UserModel.findOne({ ID: userID });
 
     if (foundUser) {
       const newParcel = {
-        parcelLocation: parcelData.destination,
-        sender: parcelData.sender, // lowercase "sender"
-        receiver: parcelData.receiver, // lowercase "receiver"
+        parcelLocation: data.destination,
+        sender: data.sender, // lowercase "sender"
+        receiver: data.receiver, // lowercase "receiver"
         trackingNumber: IdGen(15), // lowercase "trackingNumber"
         coordinates: {
-          lat: parcelData.coordinates.lat,
-          lon: parcelData.coordinates.lon,
+          lat: data.coordinates.lat,
+          lon: data.coordinates.lon,
         },
       };
 
