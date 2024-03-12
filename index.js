@@ -98,8 +98,6 @@ app.post("/Register", async (req, res) => {
 });
 
 
-
-
 app.post("/login", async (req, res) => {
   try {
     const { email, phoneNumber } = req.body;
@@ -144,16 +142,19 @@ app.post("/login", async (req, res) => {
 
 app.post("/Parcels", async (req, res) => {
   try {
-    const { userID, destination, sender, receiver, coordinates } = req.body;
+    const { userID, ...parcelData } = req.body; // Destructure userID separately
     const foundUser = await UserModel.findOne({ ID: userID });
 
     if (foundUser) {
       const newParcel = {
-        parcelLocation: destination,
-        sender: sender, // lowercase "sender"
-        receiver: receiver, // lowercase "receiver"
+        parcelLocation: parcelData.destination,
+        sender: parcelData.sender, // lowercase "sender"
+        receiver: parcelData.receiver, // lowercase "receiver"
         trackingNumber: IdGen(15), // lowercase "trackingNumber"
-        coordinates: { lat: coordinates.lat, lon: coordinates.lon },
+        coordinates: {
+          lat: parcelData.coordinates.lat,
+          lon: parcelData.coordinates.lon,
+        },
       };
 
       foundUser.parcels.push(newParcel);
@@ -171,6 +172,7 @@ app.post("/Parcels", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 
 app.put("/updateCoordinates", async (req, res) => {
