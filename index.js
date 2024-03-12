@@ -256,7 +256,6 @@ app.get("/userParcels/:userId", async (req, res) => {
 });
 
 
-
 app.get("/users", async (req, res) => {
   try {
     const users = await UserModel.find({});
