@@ -142,15 +142,27 @@ app.post("/login", async (req, res) => {
 
 app.post("/Parcels", async (req, res) => {
   try {
-    const { userID, ...data } = req.body; // Destructure userID separately
+    const { userID, ...data } = req.body;
+
+    // Check if all required data is provided
+    if (
+      !userID ||
+      !data.destination ||
+      !data.sender ||
+      !data.receiver ||
+      !data.coordinates
+    ) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
     const foundUser = await UserModel.findOne({ ID: userID });
 
     if (foundUser) {
       const newParcel = {
         parcelLocation: data.destination,
-        sender: data.sender, // lowercase "sender"
-        receiver: data.receiver, // lowercase "receiver"
-        trackingNumber: IdGen(15), // lowercase "trackingNumber"
+        sender: data.sender,
+        receiver: data.receiver,
+        trackingNumber: IdGen(15), // Ensure IdGen function is defined and working correctly
         coordinates: {
           lat: data.coordinates.lat,
           lon: data.coordinates.lon,
@@ -172,6 +184,7 @@ app.post("/Parcels", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 
 
@@ -222,7 +235,7 @@ app.put("/updateCoordinates", async (req, res) => {
 app.get("/userParcels/:userId", async (req, res) => {
   try {
     // Extract userId from URL parameters
-    const userId = req.params.userId;
+    const userId = req.params.userID;
 
     // Find user in the database based on userId
     const user = await UserModel.findOne({ ID: userId });
