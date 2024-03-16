@@ -53,49 +53,60 @@ const generateUniqueID = () => {
 
 app.post("/Register", async (req, res) => {
   try {
-    const userData = req.body;
+    // Extract user data from request body
+    const {
+      fullName,
+      email,
+      userName,
+      phoneNumber,
+      address,
+      DateOfBirth,
+      permanentAddress,
+    } = req.body;
 
     // Check if the email already exists
-    const existingUser = await UserModel.findOne({
-      "bioData.email": userData.email,
-    });
+    const existingUser = await UserModel.findOne({ "bioData.email": email });
     if (existingUser) {
       // Email already exists, return a conflict response
-      return res
-        .status(409)
-        .json({
-          message: "User already registered",
-          user: existingUser.toObject(),
-        });
+      return res.status(409).json({
+        message: "User already registered",
+        user: existingUser.toObject(),
+      });
     }
 
-    // Generate a unique ID
-    userData.ID = generateUniqueID();
+    // Generate a unique ID (You need to implement this function)
+    const ID = generateUniqueID();
 
-    // Create a new user with the provided details
-    const savedUser = await new UserModel({
-      ID: userData.ID,
+    // Create a new user object
+    const newUser = new UserModel({
+      ID,
       bioData: {
-        fullName: userData.fullName,
-        email: userData.email,
-        userName: userData.userName,
-        phoneNumber: userData.phoneNumber,
-        address: userData.address,
-        DOB: userData.DOB,
-        permanentAddress: userData.permanentAddress,
+        fullName,
+        email,
+        userName,
+        phoneNumber,
+        address,
+        DOB: DateOfBirth,
+        permanentAddress,
       },
       parcels: [],
-    }).save();
+    });
 
+    // Save the user to the database
+    const savedUser = await newUser.save();
+
+    // Respond with success message and saved user details
     res.status(201).json({
       message: "New user registered successfully",
       user: savedUser.toObject(),
     });
   } catch (error) {
+    // Handle errors
     console.error("Error during user registration:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 
 app.post("/login", async (req, res) => {
