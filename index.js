@@ -149,8 +149,8 @@ app.post("/Parcels", async (req, res) => {
       !userID ||
       !data.destination ||
       !data.sender ||
-      !data.receiver ||
-      !data.coordinates
+      !data.recipient ||
+      !data.coordinates 
     ) {
       return res.status(400).json({ error: "Missing required fields" });
     }
