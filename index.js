@@ -1,78 +1,290 @@
-const express = require('express');
+const express = require("express");
 const mongoose = require("mongoose");
-const bodyParser = require("body-parser");
 const cors = require("cors");
-
-const User = require('./model/UserModel')
+const bodyParser = require("body-parser");
+const UserModel = require("./Users_module/UserSchema");
 require("dotenv").config();
 
-const app = express()
-app.use(cors())
+const app = express();
 
-mongoose.connect(process.env.DB_CONNECTION_STRING,{
-    useNewUrlParser: true,
+const corsOptions = {
+  origin: "*",
+};
+
+app.use(cors(corsOptions));
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+mongoose.connect(process.env.DB_CONNECTION_STRING, {
+  useNewUrlParser: true,
   useUnifiedTopology: true,
 });
 
 const db = mongoose.connection;
 
-db.on("error",(error)=>{
-    console.error("mongodb connection error",error);
-})
+db.on("error", (error) => {
+  console.error("MongoDb connection error:", error);
+});
 
-db.once("open",()=>{
-    console.log("connected to mongodb");
-})
+db.once("open", () => {
+  console.log("connected to mongoDb");
+});
 
-const PORT = process.env.PORT || 4000;
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended:true}))
+// Id NumberGenerator
+const IdGen = (length) => {
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    result += characters.charAt(randomIndex);
+  }
+  return result;
+};
 
-// Registration Route
-app.post("/signup", async (req, res) => {
+// Function to generate a unique ID
+const generateUniqueID = () => {
+  // Implement your unique ID generation logic here
+  // For simplicity, using a timestamp as an example
+  return Date.now().toString();
+};
+
+
+app.post("/Register", async (req, res) => {
   try {
-    const { email, phoneNumber, password, fullName, userName } = req.body;
+    const userData = req.body;
 
     // Check if the email already exists
-    const existingUser = await User.findOne({ email });
-
+    const existingUser = await UserModel.findOne({
+      "bioData.email": userData.email,
+    });
     if (existingUser) {
-      return res.json({ success: false, message: "Email already exists" });
+      // Email already exists, return a conflict response
+      return res
+        .status(409)
+        .json({
+          message: "User already registered",
+          user: existingUser.toObject(),
+        });
     }
 
-    // Hash the password before saving it to the database
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Generate a unique ID
+    userData.ID = generateUniqueID();
 
-    // Create a new user with the updated model
-    const newUser = await User.create({
-      email,
-      phoneNumber,
-      password: hashedPassword,
-      fullName,
-      userName,
-    });
+    // Create a new user with the provided details
+    const savedUser = await new UserModel({
+      ID: userData.ID,
+      bioData: {
+        fullName: userData.fullName,
+        email: userData.email,
+        userName: userData.userName,
+        phoneNumber: userData.phoneNumber,
+        address: userData.address,
+        DOB: userData.DOB,
+        permanentAddress: userData.permanentAddress,
+      },
+      parcels: [],
+    }).save();
 
-    // Generate and send a JWT token upon successful registration with expiration time (e.g., 1 day)
-    const token = jwt.sign({ userId: newUser._id }, process.env.SECRET_KEY, {
-      expiresIn: "2w",
-    });
-
-    res.json({
-      success: true,
-      token,
-      message: "Registration successful",
+    res.status(201).json({
+      message: "New user registered successfully",
+      user: savedUser.toObject(),
     });
   } catch (error) {
-    if (error.code === 11000) {
-      // Duplicate key violation for email or username
-      res.json({ success: false, message: "Email or username already exists" });
-    } else {
-      console.error(error);
-      res.status(500).json("Internal Server Error");
-    }
+    console.error("Error during user registration:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
-app.listen(PORT,()=>{
-    console.log(`server is running on port ${PORT}`);
-})
+
+app.post("/login", async (req, res) => {
+  try {
+    const { email, phoneNumber } = req.body;
+
+    // Check if either email or phone number is provided
+    if (!email && !phoneNumber) {
+      return res
+        .status(400)
+        .json({ error: "Email or phone number is required for login" });
+    }
+
+    // Find the user based on email or phone number
+    const user = await UserModel.findOne({
+      $or: [{ "bioData.email": email }, { "bioData.phoneNumber": phoneNumber }],
+    });
+
+    // Check if the user exists
+    if (user) {
+      // Generate a token with 20 characters
+      const token = IdGen(20);
+
+      // You may want to save the token in the user document for future use
+      user.token = token;
+      await user.save();
+
+      // Return success message, user details, and the token
+      res.status(200).json({
+        message: "Login successful",
+        user: user.toObject(),
+        token: token,
+      });
+    } else {
+      // User not found
+      res.status(404).json({ error: "User not found" });
+    }
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+app.post("/Parcels", async (req, res) => {
+  try {
+    const { userID, ...data } = req.body;
+
+    // Check if all required data is provided
+    if (
+      !userID ||
+      !data.destination ||
+      !data.sender ||
+      !data.receiver ||
+      !data.coordinates
+    ) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const foundUser = await UserModel.findOne({ ID: userID });
+
+    if (foundUser) {
+      const newParcel = {
+        parcelLocation: data.destination,
+        sender: data.sender,
+        receiver: data.receiver,
+        trackingNumber: IdGen(15), // Ensure IdGen function is defined and working correctly
+        coordinates: {
+          lat: data.coordinates.lat,
+          lon: data.coordinates.lon,
+        },
+      };
+
+      foundUser.parcels.push(newParcel);
+      const savedUser = await foundUser.save();
+
+      res.status(200).json({
+        message: "Parcel added to user successfully",
+        user: savedUser,
+      });
+    } else {
+      res.status(404).json({ error: "User not found" });
+    }
+  } catch (error) {
+    console.error("Error adding parcel:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+
+
+app.put("/updateCoordinates", async (req, res) => {
+  try {
+    const { userId, parcelId, coordinates } = req.body;
+    console.log("Request received:", { userId, parcelId, coordinates });
+
+    const user = await UserModel.findOne({ ID: userId });
+    console.log("User found:", user);
+
+    if (!user) {
+      console.error("User not found. UserId:", userId);
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const parcelIndex = user.parcels.findIndex(
+      (p) => p.trackingNumber === parcelId
+    );
+
+    console.log("ParcelIndex:", parcelIndex);
+
+    if (parcelIndex === -1) {
+      console.error("Parcel not found. User:", user, "ParcelId:", parcelId);
+      return res.status(404).json({ error: "Parcel not found" });
+    }
+
+    console.log("Updating coordinates...");
+    user.parcels[parcelIndex].coordinates = {
+      lat: coordinates.lat,
+      lon: coordinates.lon,
+    };
+
+    const savedUser = await user.save();
+    console.log("Coordinates updated. User:", savedUser);
+
+    res.status(200).json({
+      message: "Parcel coordinates updated successfully",
+      user: savedUser,
+    });
+  } catch (error) {
+    console.error("Internal server error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+app.get("/userParcels/:userId", async (req, res) => {
+  try {
+    // Extract userId from URL parameters
+    const userId = req.params.userID;
+
+    // Find user in the database based on userId
+    const user = await UserModel.findOne({ ID: userId });
+
+    // Check if the user exists
+    if (!user) {
+      console.error("User not found. UserId:", userId);
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Extract user's parcels
+    const userParcels = user.parcels;
+
+    // Check if the user has any parcels
+    if (!userParcels || userParcels.length === 0) {
+      return res.status(200).json({
+        message: "User has no parcels",
+        userParcels: [],
+      });
+    }
+
+    // Respond with success message and user's parcels
+    res.status(200).json({
+      message: "User parcels retrieved successfully",
+      userParcels: userParcels,
+    });
+  } catch (error) {
+    console.error("Internal server error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+app.get("/users", async (req, res) => {
+  try {
+    const users = await UserModel.find({});
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+app.use((req, res) => {
+  res.status(404).send("Not Found");
+});
+
+
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
