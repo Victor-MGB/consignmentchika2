@@ -50,7 +50,6 @@ const generateUniqueID = () => {
   return Date.now().toString();
 };
 
-
 app.post("/Register", async (req, res) => {
   try {
     const userData = req.body;
@@ -61,12 +60,10 @@ app.post("/Register", async (req, res) => {
     });
     if (existingUser) {
       // Email already exists, return a conflict response
-      return res
-        .status(409)
-        .json({
-          message: "User already registered",
-          user: existingUser.toObject(),
-        });
+      return res.status(409).json({
+        message: "User already registered",
+        user: existingUser.toObject(),
+      });
     }
 
     // Generate a unique ID
@@ -96,7 +93,6 @@ app.post("/Register", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 app.post("/login", async (req, res) => {
   try {
@@ -139,20 +135,40 @@ app.post("/login", async (req, res) => {
   }
 });
 
-
 app.post("/Parcels", async (req, res) => {
   try {
     const { userID, ...data } = req.body;
 
-    // Check if all required data is provided
-    if (
-      !userID ||
-      !data.destination ||
-      !data.sender ||
-      !data.recipient ||
-      !data.coordinates 
-    ) {
-      return res.status(400).json({ error: "Missing required fields" });
+    const missingFields = [];
+    if (userID === undefined) {
+      missingFields.push("userID");
+    }
+    if (data.destination === undefined) {
+      missingFields.push("destination");
+    }
+    if (data.sender === undefined) {
+      missingFields.push("sender");
+    }
+    if (data.receiver === undefined) {
+      missingFields.push("receiver");
+    }
+    if (data.coordinates === undefined) {
+      missingFields.push("coordinates");
+    } else {
+      if (data.coordinates.lat === undefined) {
+        missingFields.push("coordinates.lat");
+      }
+      if (data.coordinates.lon === undefined) {
+        missingFields.push("coordinates.lon");
+      }
+    }
+
+    if (missingFields.length > 0) {
+      return res
+        .status(400)
+        .json({
+          error: `Missing required fields: ${missingFields.join(", ")}`,
+        });
     }
 
     const foundUser = await UserModel.findOne({ ID: userID });
@@ -185,9 +201,6 @@ app.post("/Parcels", async (req, res) => {
   }
 });
 
-
-
-
 app.put("/updateCoordinates", async (req, res) => {
   try {
     const { userId, parcelId, coordinates } = req.body;
@@ -202,7 +215,7 @@ app.put("/updateCoordinates", async (req, res) => {
     }
 
     const parcelIndex = user.parcels.findIndex(
-      (p) => p.trackingNumber === parcelId
+      (p) => p.trackingNumber === parcelId,
     );
 
     console.log("ParcelIndex:", parcelIndex);
@@ -230,7 +243,6 @@ app.put("/updateCoordinates", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 app.get("/userParcels/:userId", async (req, res) => {
   try {
@@ -268,7 +280,6 @@ app.get("/userParcels/:userId", async (req, res) => {
   }
 });
 
-
 app.get("/users", async (req, res) => {
   try {
     const users = await UserModel.find({});
@@ -278,11 +289,9 @@ app.get("/users", async (req, res) => {
   }
 });
 
-
 app.use((req, res) => {
   res.status(404).send("Not Found");
 });
-
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
