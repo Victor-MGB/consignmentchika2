@@ -137,7 +137,7 @@ app.post("/login", async (req, res) => {
 
 app.post("/Parcels", async (req, res) => {
   try {
-    const { userID, ...data } = req.body;
+    const { userID, data } = req.body;
 
     const missingFields = [];
     if (userID === undefined) {
@@ -149,7 +149,7 @@ app.post("/Parcels", async (req, res) => {
     if (data.sender === undefined) {
       missingFields.push("sender");
     }
-    if (data.receiver === undefined) {
+    if (data.recipient === undefined) {
       missingFields.push("receiver");
     }
     if (data.coordinates === undefined) {
@@ -164,11 +164,10 @@ app.post("/Parcels", async (req, res) => {
     }
 
     if (missingFields.length > 0) {
-      return res
-        .status(400)
-        .json({
-          error: `Missing required fields: ${missingFields.join(", ")}`,
-        });
+      return res.status(400).json({
+        error: `Missing required fields: ${missingFields.join(", ")}`,
+        requestBody: `the body of the request ${req.body}`,
+      });
     }
 
     const foundUser = await UserModel.findOne({ ID: userID });
