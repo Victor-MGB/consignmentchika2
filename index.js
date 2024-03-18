@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const query = require("node:querystring");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const UserModel = require("./Users_module/UserSchema");
@@ -243,19 +244,17 @@ app.put("/updateCoordinates", async (req, res) => {
   }
 });
 
-app.get("/userParcels/:userId", async (req, res) => {
-  req;
+app.get("/userParcels", async (req, res) => {
   try {
-    // Extract userId from URL parameters
-    const userId = req.params.userID;
+    const userID = req.body.data;
 
     // Find user in the database based on userId
-    const user = await UserModel.findOne({ ID: userId });
+    const user = await UserModel.findOne({ ID: userID });
 
     // Check if the user exists
     if (!user) {
-      console.error("User not found. UserId:", userId);
-      return res.status(404).json({ error: "User not found", UserID: userId });
+      console.error("User not found. UserId:", userID);
+      return res.status(404).json({ error: "User not found", UserID: userID });
     }
 
     // Extract user's parcels
