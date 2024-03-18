@@ -177,7 +177,7 @@ app.post("/Parcels", async (req, res) => {
         parcelLocation: data.destination,
         sender: data.sender,
         receiver: data.receiver,
-        trackingNumber: IdGen(15), // Ensure IdGen function is defined and working correctly
+        trackingNumber: IdGen(15),
         coordinates: {
           lat: data.coordinates.lat,
           lon: data.coordinates.lon,
@@ -244,6 +244,7 @@ app.put("/updateCoordinates", async (req, res) => {
 });
 
 app.get("/userParcels/:userId", async (req, res) => {
+  req;
   try {
     // Extract userId from URL parameters
     const userId = req.params.userID;
@@ -254,7 +255,7 @@ app.get("/userParcels/:userId", async (req, res) => {
     // Check if the user exists
     if (!user) {
       console.error("User not found. UserId:", userId);
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "User not found", UserID: userId });
     }
 
     // Extract user's parcels
