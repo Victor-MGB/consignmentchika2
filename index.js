@@ -211,7 +211,9 @@ app.put("/updateCoordinates", async (req, res) => {
 
     if (!user) {
       console.error("User not found. UserId:", userId);
-      return res.status(404).json({ error: "User not found" });
+      return res
+        .status(404)
+        .json({ error: "User not found", dataRecieved: req.body });
     }
 
     const parcelIndex = user.parcels.findIndex(
@@ -246,15 +248,21 @@ app.put("/updateCoordinates", async (req, res) => {
 
 app.get("/userParcels", async (req, res) => {
   try {
-    const userID = req.body.data;
+    const userID = req.query.data; 
+
+    // Check if user ID is provided
+    if (!userID) {
+      console.error("No user ID provided in the query parameters");
+      return res.status(400).json({ error: "No user ID provided" });
+    }
 
     // Find user in the database based on userId
     const user = await UserModel.findOne({ ID: userID });
 
     // Check if the user exists
     if (!user) {
-      console.error("User not found. UserId:", userID);
-      return res.status(404).json({ error: "User not found", UserID: userID });
+      console.error("User not found. UserID:", userID);
+      return res.status(404).json({ error: `User not found`, UserID: userID });
     }
 
     // Extract user's parcels
@@ -278,6 +286,7 @@ app.get("/userParcels", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 app.get("/users", async (req, res) => {
   try {
