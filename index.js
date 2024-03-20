@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const Admin = require('./Users_module/Admin')
 const UserModel = require("./Users_module/UserSchema");
 require("dotenv").config();
 
@@ -278,6 +279,56 @@ app.get("/users", async (req, res) => {
   }
 });
 
+
+app.post("/admin/signup", async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+
+    // Check if admin already exists
+    const existingAdmin = await Admin.findOne({ email: email });
+    if (existingAdmin) {
+      return res.status(409).json({ message: "Admin already exists" });
+    }
+
+    // Create new admin
+    const newAdmin = await new Admin({
+      username: username,
+      email: email,
+      password: password, // Store the password as is, without hashing
+    }).save();
+
+    res
+      .status(201)
+      .json({ message: "Admin registered successfully", admin: newAdmin });
+  } catch (error) {
+    console.error("Error during admin signup:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+// Endpoint for admin login
+app.post("/admin/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find admin by email
+    const admin = await Admin.findOne({ email: email });
+    if (!admin) {
+      return res.status(401).json({ error: "No records found" });
+    }
+
+    // Check password
+    if (admin.password === password) {
+      res.status(200).json({ message: "Success"});
+    } else {
+      res.status(401).json({ error: "Wrong password" });
+    }
+  } catch (error) {
+    console.error("Error during admin login:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 app.use((req, res) => {
   res.status(404).send("Not Found");
