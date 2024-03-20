@@ -177,7 +177,7 @@ app.post("/Parcels", async (req, res) => {
       const newParcel = {
         parcelLocation: data.destination,
         sender: data.sender,
-        receiver: data.receiver,
+        receiver: data.recipient,
         trackingNumber: IdGen(15),
         coordinates: {
           lat: data.coordinates.lat,
