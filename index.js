@@ -298,7 +298,6 @@ app.get("/users", async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
 
 app.post("/admin/signup", async (req, res) => {
   try {
@@ -350,8 +349,6 @@ app.post("/admin/login", async (req, res) => {
   }
 });
 
-=======
->>>>>>> dfeff789f10f61ebca8dcb17794061ba2593af79
 app.use((req, res) => {
   res.status(404).send("Not Found");
 });
