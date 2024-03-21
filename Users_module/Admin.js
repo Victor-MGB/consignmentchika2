@@ -1,11 +1,21 @@
 const mongoose = require("mongoose");
 
-const FormDataSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  password: String,
+const AdminSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
 });
 
-const FormDataModel = mongoose.model("Admin", FormDataSchema);
+const Admin = mongoose.model("Admin", AdminSchema);
 
-module.exports = FormDataModel;
+module.exports = Admin;

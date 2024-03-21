@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const query = require("node:querystring");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const jwt = require("jsonwebtoken");
 const Admin = require('./Users_module/Admin')
 const UserModel = require("./Users_module/UserSchema");
 require("dotenv").config();
@@ -299,32 +300,10 @@ app.get("/users", async (req, res) => {
 });
 
 
-app.post("/admin/signup", async (req, res) => {
-  try {
-    const { username, email, password } = req.body;
-
-    // Check if admin already exists
-    const existingAdmin = await Admin.findOne({ email: email });
-    if (existingAdmin) {
-      return res.status(409).json({ message: "Admin already exists" });
-    }
-
-    // Create new admin
-    const newAdmin = await new Admin({
-      username: username,
-      email: email,
-      password: password, // Store the password as is, without hashing
-    }).save();
-
-    res
-      .status(201)
-      .json({ message: "Admin registered successfully", admin: newAdmin });
-  } catch (error) {
-    console.error("Error during admin signup:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
+// Function to generate JWT token
+const generateToken = (payload) => {
+  return jwt.sign(payload, process.env.JWT_SECRET);
+};
 
 // Endpoint for admin login
 app.post("/admin/login", async (req, res) => {
@@ -339,7 +318,15 @@ app.post("/admin/login", async (req, res) => {
 
     // Check password
     if (admin.password === password) {
-      res.status(200).json({ message: "Success"});
+      // Generate a token
+      const tokenLength = 20; // Define the length of the token
+      const token = generateToken(tokenLength);
+
+      // You may want to save the token in the admin document for future use
+      admin.token = token;
+      await admin.save();
+
+      res.status(200).json({ message: "Success", token: token });
     } else {
       res.status(401).json({ error: "Wrong password" });
     }
@@ -348,6 +335,45 @@ app.post("/admin/login", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// // Endpoint for admin registration (sign up)
+// app.post("/admin/signup", async (req, res) => {
+//   try {
+//     const { username, email, password } = req.body;
+
+//     // Check if admin already exists
+//     const existingAdmin = await Admin.findOne({ email: email });
+//     if (existingAdmin) {
+//       return res.status(409).json({ message: "Admin already exists" });
+//     }
+
+//     // Create new admin with plain text password (not recommended)
+//     const newAdmin = await new Admin({
+//       username: username,
+//       email: email,
+//       password: password, // Store the plain text password (not recommended)
+//     }).save();
+
+//     res.status(201).json({ message: "Admin registered successfully",newAdmin:newAdmin });
+//   } catch (error) {
+//     console.error("Error during admin registration:", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// });
+
+// Endpoint to get all admin user details
+app.get("/admin/all", async (req, res) => {
+  try {
+    // Find all admin users
+    const admins = await Admin.find({}, { password: 0 }); // Exclude password field from response
+
+    res.status(200).json(admins);
+  } catch (error) {
+    console.error("Error retrieving admin users:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 
 app.use((req, res) => {
   res.status(404).send("Not Found");
