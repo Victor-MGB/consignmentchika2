@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const query = require("node:querystring");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const Admin = require('./Users_module/Admin')
@@ -51,7 +52,6 @@ const generateUniqueID = () => {
   return Date.now().toString();
 };
 
-
 app.post("/Register", async (req, res) => {
   try {
     const userData = req.body;
@@ -62,12 +62,10 @@ app.post("/Register", async (req, res) => {
     });
     if (existingUser) {
       // Email already exists, return a conflict response
-      return res
-        .status(409)
-        .json({
-          message: "User already registered",
-          user: existingUser.toObject(),
-        });
+      return res.status(409).json({
+        message: "User already registered",
+        user: existingUser.toObject(),
+      });
     }
 
     // Generate a unique ID
@@ -97,7 +95,6 @@ app.post("/Register", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 app.post("/login", async (req, res) => {
   try {
@@ -140,20 +137,39 @@ app.post("/login", async (req, res) => {
   }
 });
 
-
 app.post("/Parcels", async (req, res) => {
   try {
-    const { userID, ...data } = req.body;
+    const { userID, data } = req.body;
 
-    // Check if all required data is provided
-    if (
-      !userID ||
-      !data.destination ||
-      !data.sender ||
-      !data.receiver ||
-      !data.coordinates
-    ) {
-      return res.status(400).json({ error: "Missing required fields" });
+    const missingFields = [];
+    if (userID === undefined) {
+      missingFields.push("userID");
+    }
+    if (data.destination === undefined) {
+      missingFields.push("destination");
+    }
+    if (data.sender === undefined) {
+      missingFields.push("sender");
+    }
+    if (data.recipient === undefined) {
+      missingFields.push("receiver");
+    }
+    if (data.coordinates === undefined) {
+      missingFields.push("coordinates");
+    } else {
+      if (data.coordinates.lat === undefined) {
+        missingFields.push("coordinates.lat");
+      }
+      if (data.coordinates.lon === undefined) {
+        missingFields.push("coordinates.lon");
+      }
+    }
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        error: `Missing required fields: ${missingFields.join(", ")}`,
+        requestBody: `the body of the request ${req.body}`,
+      });
     }
 
     const foundUser = await UserModel.findOne({ ID: userID });
@@ -162,8 +178,8 @@ app.post("/Parcels", async (req, res) => {
       const newParcel = {
         parcelLocation: data.destination,
         sender: data.sender,
-        receiver: data.receiver,
-        trackingNumber: IdGen(15), // Ensure IdGen function is defined and working correctly
+        receiver: data.recipient,
+        trackingNumber: IdGen(15),
         coordinates: {
           lat: data.coordinates.lat,
           lon: data.coordinates.lon,
@@ -186,9 +202,6 @@ app.post("/Parcels", async (req, res) => {
   }
 });
 
-
-
-
 app.put("/updateCoordinates", async (req, res) => {
   try {
     const { userId, parcelId, coordinates } = req.body;
@@ -199,11 +212,13 @@ app.put("/updateCoordinates", async (req, res) => {
 
     if (!user) {
       console.error("User not found. UserId:", userId);
-      return res.status(404).json({ error: "User not found" });
+      return res
+        .status(404)
+        .json({ error: "User not found", dataRecieved: req.body });
     }
 
     const parcelIndex = user.parcels.findIndex(
-      (p) => p.trackingNumber === parcelId
+      (p) => p.trackingNumber === parcelId,
     );
 
     console.log("ParcelIndex:", parcelIndex);
@@ -232,19 +247,23 @@ app.put("/updateCoordinates", async (req, res) => {
   }
 });
 
-
-app.get("/userParcels/:userId", async (req, res) => {
+app.get("/userParcels", async (req, res) => {
   try {
-    // Extract userId from URL parameters
-    const userId = req.params.userID;
+    const userID = req.query.data; 
+
+    // Check if user ID is provided
+    if (!userID) {
+      console.error("No user ID provided in the query parameters");
+      return res.status(400).json({ error: "No user ID provided" });
+    }
 
     // Find user in the database based on userId
-    const user = await UserModel.findOne({ ID: userId });
+    const user = await UserModel.findOne({ ID: userID });
 
     // Check if the user exists
     if (!user) {
-      console.error("User not found. UserId:", userId);
-      return res.status(404).json({ error: "User not found" });
+      console.error("User not found. UserID:", userID);
+      return res.status(404).json({ error: `User not found`, UserID: userID });
     }
 
     // Extract user's parcels
@@ -279,6 +298,7 @@ app.get("/users", async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 
 app.post("/admin/signup", async (req, res) => {
   try {
@@ -330,12 +350,13 @@ app.post("/admin/login", async (req, res) => {
   }
 });
 
+=======
+>>>>>>> dfeff789f10f61ebca8dcb17794061ba2593af79
 app.use((req, res) => {
   res.status(404).send("Not Found");
 });
 
-
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4500;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
