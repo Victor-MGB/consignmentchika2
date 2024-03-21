@@ -326,7 +326,8 @@ app.post("/admin/login", async (req, res) => {
       admin.token = token;
       await admin.save();
 
-      res.status(200).json({ message: "Success", token: token });
+      // Return success message along with the admin object
+      res.status(200).json({ message: "Success", admin: admin });
     } else {
       res.status(401).json({ error: "Wrong password" });
     }
@@ -335,6 +336,7 @@ app.post("/admin/login", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 // // Endpoint for admin registration (sign up)
 // app.post("/admin/signup", async (req, res) => {
@@ -362,6 +364,7 @@ app.post("/admin/login", async (req, res) => {
 // });
 
 // Endpoint to get all admin user details
+
 app.get("/admin/all", async (req, res) => {
   try {
     // Find all admin users
