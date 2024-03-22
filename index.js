@@ -307,34 +307,35 @@ const generateToken = (payload) => {
 
 // Endpoint for admin login
 app.post("/admin/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
+    try {
+        const { email, password } = req.body;
 
-    // Find admin by email
-    const admin = await Admin.findOne({ email: email });
-    if (!admin) {
-      return res.status(401).json({ error: "No records found" });
+        // Find admin by email
+        const admin = await Admin.findOne({ email: email });
+        if (!admin) {
+            return res.status(401).json({ error: "No records found" });
+        }
+
+        // Check password
+        if (admin.password === password) {
+          // Generate a token with 20 characters
+          const token = IdGen(20);
+
+          // You may want to save the token in the user document for future use
+          admin.token = token;
+          await admin.save();
+
+          // Return success message along with the admin object and token
+          res
+            .status(200)
+            .json({ message: "Success login successful", admin: admin, token: token });
+        } else {
+            res.status(401).json({ error: "Wrong password" });
+        }
+    } catch (error) {
+        console.error("Error during admin login:", error);
+        res.status(500).json({ error: "Internal server error" });
     }
-
-    // Check password
-    if (admin.password === password) {
-      // Generate a token
-      const tokenLength = 20; // Define the length of the token
-      const token = generateToken(tokenLength);
-
-      // You may want to save the token in the admin document for future use
-      admin.token = token;
-      await admin.save();
-
-      // Return success message along with the admin object
-      res.status(200).json({ message: "Success", admin: admin });
-    } else {
-      res.status(401).json({ error: "Wrong password" });
-    }
-  } catch (error) {
-    console.error("Error during admin login:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
 });
 
 
