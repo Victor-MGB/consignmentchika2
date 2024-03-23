@@ -83,6 +83,7 @@ app.post("/Register", async (req, res) => {
         address: userData.address,
         DOB: userData.DOB,
         permanentAddress: userData.permanentAddress,
+        password: userData.password,
       },
       parcels: [],
     }).save();
@@ -99,18 +100,18 @@ app.post("/Register", async (req, res) => {
 
 app.post("/login", async (req, res) => {
   try {
-    const { email, phoneNumber } = req.body;
+    const { email, password } = req.body;
 
-    // Check if either email or phone number is provided
-    if (!email && !phoneNumber) {
+    // Check if either email and password is provided
+    if (!email && !password) {
       return res
         .status(400)
-        .json({ error: "Email or phone number is required for login" });
+        .json({ error: "Email or password is required for login" });
     }
 
-    // Find the user based on email or phone number
+    // Find the user based on email and password
     const user = await UserModel.findOne({
-      $or: [{ "bioData.email": email }, { "bioData.phoneNumber": phoneNumber }],
+      $And: [{ "bioData.email": email }, { "bioData.password": password }],
     });
 
     // Check if the user exists
@@ -250,7 +251,7 @@ app.put("/updateCoordinates", async (req, res) => {
 
 app.get("/userParcels", async (req, res) => {
   try {
-    const userID = req.query.data; 
+    const userID = req.query.data;
 
     // Check if user ID is provided
     if (!userID) {
@@ -288,7 +289,6 @@ app.get("/userParcels", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 app.get("/users", async (req, res) => {
   try {

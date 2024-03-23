@@ -11,7 +11,7 @@ const BioDataSchema = new Schema({
   address: String,
   DOB: Date,
   permanentAddress: String,
-  password: String,
+  password:String
 });
 
 //  schema for the PARCEL subdocument
@@ -28,7 +28,7 @@ const ParcelSchema = new Schema({
 
 // schema for the User document
 const UserSchema = new Schema({
-  ID: { type: String },
+  ID: { type: String, unique: true },
   bioData: BioDataSchema,
   parcels: [ParcelSchema],
 });
@@ -37,3 +37,4 @@ const UserSchema = new Schema({
 const User = mongoose.model("User", UserSchema);
 
 module.exports = User;
+
