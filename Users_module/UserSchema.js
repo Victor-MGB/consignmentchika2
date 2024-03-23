@@ -11,6 +11,7 @@ const BioDataSchema = new Schema({
   address: String,
   DOB: Date,
   permanentAddress: String,
+  password: String,
 });
 
 //  schema for the PARCEL subdocument
@@ -31,7 +32,6 @@ const UserSchema = new Schema({
   bioData: BioDataSchema,
   parcels: [ParcelSchema],
 });
-
 
 // model for the User collection
 const User = mongoose.model("User", UserSchema);
