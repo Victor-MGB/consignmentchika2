@@ -111,7 +111,7 @@ app.post("/login", async (req, res) => {
 
     // Find the user based on email and password
     const user = await UserModel.findOne({
-      $And: [{ "bioData.email": email }, { "bioData.password": password }],
+      $and: [{ "bioData.email": email }, { "bioData.password": password }],
     });
 
     // Check if the user exists
@@ -325,13 +325,11 @@ app.post("/admin/login", async (req, res) => {
       await admin.save();
 
       // Return success message along with the admin object and token
-      res
-        .status(200)
-        .json({
-          message: "Success login successful",
-          admin: admin,
-          token: token,
-        });
+      res.status(200).json({
+        message: "Success login successful",
+        admin: admin,
+        token: token,
+      });
     } else {
       res.status(401).json({ error: "Wrong password" });
     }
