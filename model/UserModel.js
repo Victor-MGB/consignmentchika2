@@ -11,6 +11,7 @@ const BioDataSchema = new Schema({
   address: String,
   DOB: Date,
   permanentAddress: String,
+  password:String
 });
 
 //  schema for the PARCEL subdocument
