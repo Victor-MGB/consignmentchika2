@@ -4,7 +4,7 @@ const query = require("node:querystring");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const jwt = require("jsonwebtoken");
-const Admin = require('./Users_module/Admin')
+const Admin = require("./Users_module/Admin");
 const UserModel = require("./Users_module/UserSchema");
 require("dotenv").config();
 
@@ -135,7 +135,7 @@ app.post("/login", async (req, res) => {
     }
   } catch (error) {
     console.error("Error during login:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error", message: error });
   }
 });
 
@@ -299,7 +299,6 @@ app.get("/users", async (req, res) => {
   }
 });
 
-
 // Function to generate JWT token
 const generateToken = (payload) => {
   return jwt.sign(payload, process.env.JWT_SECRET);
@@ -307,37 +306,40 @@ const generateToken = (payload) => {
 
 // Endpoint for admin login
 app.post("/admin/login", async (req, res) => {
-    try {
-        const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-        // Find admin by email
-        const admin = await Admin.findOne({ email: email });
-        if (!admin) {
-            return res.status(401).json({ error: "No records found" });
-        }
-
-        // Check password
-        if (admin.password === password) {
-          // Generate a token with 20 characters
-          const token = IdGen(20);
-
-          // You may want to save the token in the user document for future use
-          admin.token = token;
-          await admin.save();
-
-          // Return success message along with the admin object and token
-          res
-            .status(200)
-            .json({ message: "Success login successful", admin: admin, token: token });
-        } else {
-            res.status(401).json({ error: "Wrong password" });
-        }
-    } catch (error) {
-        console.error("Error during admin login:", error);
-        res.status(500).json({ error: "Internal server error" });
+    // Find admin by email
+    const admin = await Admin.findOne({ email: email });
+    if (!admin) {
+      return res.status(401).json({ error: "No records found" });
     }
-});
 
+    // Check password
+    if (admin.password === password) {
+      // Generate a token with 20 characters
+      const token = IdGen(20);
+
+      // You may want to save the token in the user document for future use
+      admin.token = token;
+      await admin.save();
+
+      // Return success message along with the admin object and token
+      res
+        .status(200)
+        .json({
+          message: "Success login successful",
+          admin: admin,
+          token: token,
+        });
+    } else {
+      res.status(401).json({ error: "Wrong password" });
+    }
+  } catch (error) {
+    console.error("Error during admin login:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // // Endpoint for admin registration (sign up)
 // app.post("/admin/signup", async (req, res) => {
@@ -377,7 +379,6 @@ app.get("/admin/all", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 app.use((req, res) => {
   res.status(404).send("Not Found");
